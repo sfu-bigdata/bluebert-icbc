@@ -14,14 +14,20 @@ import os
 import pickle
 
 import tensorflow as tf
-
-
-from bluebert.conlleval import evaluate, report_notprint
-from bert import modeling
-from bert import optimization
-from bert import tokenization
-from bluebert import tf_metrics
-
+import sys
+print("sys.path************************************************************", sys.path)
+sys.path.insert(1, '/tmp/riag/nlp/bluebert/bluebert/bert')
+sys.path.insert(1, '/tmp/sbergner/nlp/bluebert/bluebert/bert')
+print("new sys path", sys.path)
+from conlleval import evaluate, report_notprint
+from modeling import BertConfig, BertModel, get_assignment_map_from_checkpoint
+from optimization import create_optimizer
+import tokenization
+import tf_metrics
+if tf.test.gpu_device_name():
+    print('Default GPU Device: {}'.format(tf.test.gpu_device_name()))
+else:
+    print("Please install GPU version of TF")
 flags = tf.flags
 
 FLAGS = flags.FLAGS
@@ -29,6 +35,8 @@ FLAGS = flags.FLAGS
 flags.DEFINE_string(
     "task_name", "NER", "The name of the task to train."
 )
+gpu_options = tf.GPUOptions(allow_growth=True)
+session = tf.InteractiveSession(config=tf.ConfigProto(gpu_options=gpu_options))
 
 flags.DEFINE_string(
     "data_dir", None,
@@ -81,7 +89,7 @@ flags.DEFINE_bool(
     "Whether to run the model in inference mode on the test set.")
 
 flags.DEFINE_integer(
-    "train_batch_size", 32,
+    "train_batch_size", 8,
     "Total batch size for training.")
 
 flags.DEFINE_integer(
@@ -240,11 +248,13 @@ class BC5CDRProcessor(DataProcessor):
             self._read_data(os.path.join(data_dir, "test.tsv")), "test")
 
     def get_labels(self):
-        return ["B", "I", "O", "X", "[CLS]", "[SEP]"]
+        return ["B-Chemical", "B-Disease", "O", "I-Chemical", "I-Disease","[CLS]", "[SEP]", "X"]
 
     def _create_example(self, lines, set_type):
         examples = []
+        
         for (i, line) in enumerate(lines):
+        #    print("line in bluebert", line)
             guid = "%s-%s" % (set_type, i)
             text = tokenization.convert_to_unicode(line[1])
             label = tokenization.convert_to_unicode(line[0])
@@ -270,7 +280,7 @@ class CLEFEProcessor(DataProcessor):
             self._read_data2(os.path.join(data_dir, "Test.tsv")), "test")
 
     def get_labels(self):
-        return ["B", "I", "O", "X", "[CLS]", "[SEP]"]
+        return ["B-Chemical", "B-Disease", "O", "I-Chemical", "I-Disease","[CLS]", "[SEP]", "X"]
 
     def _create_example(self, lines, set_type):
         examples = []
@@ -462,7 +472,7 @@ def file_based_input_fn_builder(input_file, seq_length, is_training, drop_remain
 
 def create_model(bert_config, is_training, input_ids, input_mask,
                  segment_ids, labels, num_labels, use_one_hot_embeddings):
-    model = modeling.BertModel(
+    model = BertModel(
         config=bert_config,
         is_training=is_training,
         input_ids=input_ids,
@@ -524,7 +534,7 @@ def model_fn_builder(bert_config, num_labels, init_checkpoint, learning_rate,
         scaffold_fn = None
         if init_checkpoint:
             (assignment_map,
-             initialized_variable_names) = modeling.get_assignment_map_from_checkpoint(tvars,
+             initialized_variable_names) = get_assignment_map_from_checkpoint(tvars,
                                                                                        init_checkpoint)
             tf.train.init_from_checkpoint(init_checkpoint, assignment_map)
             if use_tpu:
@@ -545,7 +555,7 @@ def model_fn_builder(bert_config, num_labels, init_checkpoint, learning_rate,
                             init_string)
         output_spec = None
         if mode == tf.estimator.ModeKeys.TRAIN:
-            train_op = optimization.create_optimizer(
+            train_op = create_optimizer(
                 total_loss, learning_rate, num_train_steps, num_warmup_steps, use_tpu)
             output_spec = tf.contrib.tpu.TPUEstimatorSpec(
                 mode=mode,
@@ -592,8 +602,6 @@ def result_to_pair(predict_examples, predictions, id2label, output_predict_file,
     """
     if len(predict_examples) != len(predictions):
         tf.logging.error('{} vs {}'.format(len(predict_examples), len(predictions)))
-    print(output_predict_file)
-    print(output_err_file)
     with tf.gfile.Open(output_predict_file, 'w') as writer, \
             tf.gfile.Open(output_err_file, 'w') as err_writer:
         for predict_line, pred_ids in zip(predict_examples, predictions):
@@ -657,7 +665,7 @@ def main(_):
     # if not FLAGS.do_train and not FLAGS.do_eval:
     #    raise ValueError("At least one of `do_train` or `do_eval` must be True.")
 
-    bert_config = modeling.BertConfig.from_json_file(FLAGS.bert_config_file)
+    bert_config = BertConfig.from_json_file(FLAGS.bert_config_file)
 
     if FLAGS.max_seq_length > bert_config.max_position_embeddings:
         raise ValueError(
