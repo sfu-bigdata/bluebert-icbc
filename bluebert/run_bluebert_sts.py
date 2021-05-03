@@ -17,12 +17,19 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-
+import sys
+print("sys.path************************************************************", sys.path)
+sys.path.insert(1, '/tmp/riag/nlp/bluebert/bluebert/bert')
+sys.path.insert(1, '/tmp/sbergner/nlp/bluebert/bluebert/bert')
+print("new sys path", sys.path)
 import csv
 import os
-from bert import modeling
-from bert import optimization
-from bert import tokenization
+#from bert import modeling
+#from bert import optimization
+#from bert import tokenization
+import modeling
+import optimization
+import tokenization
 import tensorflow as tf
 import scipy
 
@@ -76,7 +83,7 @@ flags.DEFINE_bool("do_test", False, "Whether to run test on the test set.")  # A
 flags.DEFINE_bool("benchmark", False,
                   "Whether to run a quick benchmark on prediction or not.")  # ADDED
 
-flags.DEFINE_integer("train_batch_size", 32, "Total batch size for training.")
+flags.DEFINE_integer("train_batch_size", 8, "Total batch size for training.")
 
 flags.DEFINE_integer("eval_batch_size", 8, "Total batch size for eval.")
 
