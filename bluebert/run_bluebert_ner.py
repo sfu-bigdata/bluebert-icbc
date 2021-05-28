@@ -16,8 +16,9 @@ import pickle
 import tensorflow as tf
 import sys
 print("sys.path************************************************************", sys.path)
-sys.path.insert(1, '/tmp/riag/nlp/bluebert/bluebert/bert')
-sys.path.insert(1, '/tmp/sbergner/nlp/bluebert/bluebert/bert')
+
+sys.path.append(os.path.join(os.environ['repo_path'], 'bluebert-icbc', 'bert'))
+
 print("new sys path", sys.path)
 from conlleval import evaluate, report_notprint
 from modeling import BertConfig, BertModel, get_assignment_map_from_checkpoint

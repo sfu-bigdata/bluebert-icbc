@@ -25,6 +25,9 @@ import re
 
 import tensorflow as tf
 
+import sys, os
+sys.path.append(os.path.join(os.environ['repo_path'], 'bluebert-icbc'))
+
 from bert import modeling, tokenization
 
 flags = tf.flags

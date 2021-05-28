@@ -18,12 +18,12 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 import sys
-print("sys.path************************************************************", sys.path)
-sys.path.insert(1, '/tmp/riag/nlp/bluebert/bluebert/bert')
-sys.path.insert(1, '/tmp/sbergner/nlp/bluebert/bluebert/bert')
-print("new sys path", sys.path)
 import csv
 import os
+
+sys.path.append(os.path.join(os.environ['repo_path'], 'bluebert-icbc', 'bert'))
+print("new sys path", sys.path)
+
 #from bert import modeling
 #from bert import optimization
 #from bert import tokenization
